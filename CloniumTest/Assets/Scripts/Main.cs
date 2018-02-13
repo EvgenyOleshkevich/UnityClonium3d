@@ -13,6 +13,7 @@ public class Main : MonoBehaviour {
 	public bool Stop = true;
 	public Transform[] Floors = new Transform[3];
 	private int ChangeIndex = 1;
+	public int StateOfPlay = 0;
 	void Start()
 	{
 		CreatNewQueueAndUpdate();
