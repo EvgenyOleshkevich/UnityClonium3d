@@ -6,6 +6,7 @@ public class Teleport : MonoBehaviour {
 	public Transform FrontNode;
 	public Transform BackNode;
 	public Transform ExitTeleport;
+	public Color color;
 
 	public void Transport(GameObject Ball)
 	{
