@@ -12,7 +12,7 @@ public class NodesScript : MonoBehaviour {
 	private int Size = 99;
 	private GameObject Ball;
 	private GameObject Player;
-	public GameObject OldBall;
+	public GameObject originalBall;
 	public GameObject Main;
 	private Queue<Transform> Order = new Queue<Transform>();
 	private int SizeOrder = -1;
@@ -69,7 +69,6 @@ public class NodesScript : MonoBehaviour {
 		Clicked(IndexNodes);
 	}
 
-
 	public void Clicked(int Index)
 	{
 		if ((Master == IndexPlayers) && (Main.GetComponent<Main>().Stop))
@@ -82,7 +81,7 @@ public class NodesScript : MonoBehaviour {
 
 	void CreateBall(int Index)
 	{
-		Ball = Instantiate(OldBall, this.transform);
+		Ball = Instantiate(originalBall, this.transform);
 		Alignment(this.transform);
 		if (this.transform.childCount > 3)
 		{
