@@ -8,7 +8,7 @@ public class Teleport : MonoBehaviour {
 	public Transform ExitTeleport;
 	public Color color;
 
-	public void Transport(GameObject Ball)
+	public void Transport(GameObject Ball, Player player)
 	{
 		StartCoroutine(Transporter(Ball));
 	}
@@ -16,8 +16,6 @@ public class Teleport : MonoBehaviour {
 	{
 		yield return new WaitForSeconds(0.75f);
 		Ball.transform.position = ExitTeleport.position;
-		Ball.GetComponent<BAllScrit>().AlignmentBall();
+		Ball.GetComponent<Ball>().AlignmentBall();
 	}
-
-
 }

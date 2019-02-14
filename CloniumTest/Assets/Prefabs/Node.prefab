@@ -25,7 +25,7 @@ GameObject:
   - component: {fileID: 114122520478506498}
   m_Layer: 0
   m_Name: Node
-  m_TagString: Untagged
+  m_TagString: node
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -107,11 +107,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 135f3c1235f5f8940884571b0ebf54f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Master: -1
-  MasterColor: {r: 1, g: 1, b: 1, a: 1}
-  IndexPlayers: 0
   originalBall: {fileID: 1261458347644304, guid: aa235fefcf4b80a4288aaa8322c0a195,
     type: 2}
-  Main: {fileID: 0}
-  Port: {fileID: 0}
-  TeleportStatus: -1
+  Main: {fileID: 1997338523242176, guid: 0f7a53f46113acb46b1882f0b5fdfe85, type: 2}
