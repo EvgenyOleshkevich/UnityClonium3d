@@ -8,6 +8,9 @@ public class Ball : MonoBehaviour
 	private int speed = 3;
 	private bool StopUpdate = true;
 
+	private void Start()
+	{}
+
 	void Update()
 	{
 		if (StopUpdate)

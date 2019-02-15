@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Floor : MonoBehaviour
 {
+	public GameObject originalTeleport;
 	public Color color;
 	public Color defaultColor;
 	public GameObject main;
@@ -42,24 +43,67 @@ public class Floor : MonoBehaviour
 	public void Intialization(int n)
 	{
 		n *= 4;
-		for (int i = 0; i < 4; ++i)
+		for (int i = 0; i < 2; ++i)
 		{
 			var Player = main.transform.GetChild(n + i).GetComponent<Player>();
-			int childNumber = Random.Range(0, 99);
+			int childNumber = Random.Range(0, 2);
 			while (transform.GetChild(childNumber).GetComponent<Node>().Player != null)
 			{
-				childNumber = Random.Range(0, 99);
+				childNumber = Random.Range(0, 2);
 			}
 			transform.GetChild(childNumber).GetComponent<Node>().Initialization(Player);
 		}
 	}
 
-	public IEnumerator DisclosureMain(Player player)
+	public void SpawnTeleport(Transform Floor)
 	{
-		var order = new Queue<Transform>();
-		order.Enqueue(this.transform);
+		int number = Random.Range(0, 100);
+		int side = Random.Range(0, 4);
+		float shift = 3f / 51;
+		var position = this.transform.GetChild(number).position;
+		var node = this.transform.GetChild(number).GetComponent<Node>();
+		Quaternion quaternion = new Quaternion(0, 0, 0, 1);
+		Transform neibor = node.Neibors[side];
+		switch (side)
+		{
+			case 0:
+				{
+					position.z += shift;
+					quaternion = new Quaternion(0, 90f, 0, 1);
+					break;
+				}
+			case 1:
+				{
+					position.x += shift;
+					quaternion = new Quaternion(90f, 0, 0, 1);
+					break;
+				}
+			case 2:
+				{
+					position.z -= shift;
+					quaternion = new Quaternion(0, 90f, 0, 1);
+					break;
+				}
+			case 3:
+				{
+					position.x -= shift;
+					quaternion = new Quaternion(90f, 0, 0, 1);
+					break;
+				}
+		}
+		var port = Instantiate(originalTeleport, position, quaternion, this.transform);
+		if (neibor = null)
+		{
+
+		}
+	}
+
+	public IEnumerator DisclosureMain(Node node, Player player)
+	{
+		var order = new Queue<Node>();
+		order.Enqueue(node);
 		int sizeOrder = order.Count;
-		while (sizeOrder != 0)
+		while (order.Count > 0)
 		{
 			while (sizeOrder > 0)
 			{
@@ -67,64 +111,71 @@ public class Floor : MonoBehaviour
 				--sizeOrder;
 			}
 			sizeOrder = order.Count;
-			yield return new WaitForSeconds(1.3f);
+			yield return new WaitForSeconds(1.2f);
 		}
 		main.GetComponent<Main>().UpdatePlayer();
 	}
 
-	private void Disclosure(Queue<Transform> order, Player player)
+	private void Disclosure(Queue<Node> order, Player player)
 	{
-		Transform node = order.Dequeue();
-		var nodeObject = node.GetComponent<Node>();
-		if (node.childCount < 4)
+		var node = order.Dequeue();
+		if (node.transform.childCount < 4)
 		{
 			return;
 		}
 
 		player.CountNodes += 4;
 
-		if (node.childCount == 4)
+		if (node.transform.childCount == 4)
 		{
-			node.GetComponent<Node>().Player = null;
+			node.Player = null;
 			node.GetComponent<Renderer>().material.color = defaultColor;
-			node.GetComponent<Node>().Color = Color.white;
+			node.Color = Color.white;
 			--player.CountNodes;
 		}
 
-		int ChildIndex = node.childCount;
+		int ChildIndex = node.transform.childCount;
 		// она нужна чтобы раскатывать с последнего шара, чтобы не оставалось шаров в центре
 
 		for (int i = 0; i < 4; ++i)
 		{
+			
 			--ChildIndex;
-			var ball = node.GetChild(ChildIndex).gameObject;
-			if (node.GetComponent<Node>().Neibors[i] == null)
+			var ball = node.transform.GetChild(ChildIndex);
+			if (node.Neibors[i] == null)
 			{
-				Destroy(ball);
+				Destroy(ball.gameObject);
 				--player.CountNodes;
 			}
 			else
 			{
-				var neiborNode = node.GetComponent<Node>().Neibors[i].transform;
-				if (neiborNode.tag == "teleport")
+				
+				if (node.Neibors[i].tag == "teleport")
 				{
-					ball.transform.SetParent(neiborNode);
-					ball.transform.GetComponent<Ball>().AlignmentBall();
-					neiborNode.GetComponent<Teleport>().Transport(ball, player);
+					ball.SetParent(node.Neibors[i]);
+					ball.GetComponent<Ball>().AlignmentBall();
+					if (node.Neibors[i].GetComponent<Teleport>().Node.childCount > 2)
+					{
+						order.Enqueue(node.Neibors[i].GetComponent<Teleport>().
+							GetComponent<Node>());
+					}
+					node.Neibors[i].GetComponent<Teleport>().Transport(ball, player);
 					continue;
 				}
-				ball.transform.SetParent(neiborNode);
-				ball.transform.GetComponent<Ball>().AlignmentBall();
+
+				var neiborNode = node.Neibors[i].GetComponent<Node>();
+				ball.SetParent(neiborNode.transform);
+				ball.GetComponent<Ball>().AlignmentBall();
 				neiborNode.GetComponent<Renderer>().material.color = player.Color;
-				neiborNode.GetComponent<Node>().Color = player.Color;
+				neiborNode.Color = player.Color;
 
-				if (neiborNode.GetComponent<Node>().Player != null)
+				if (neiborNode.Player != null)
 				{
-					--neiborNode.GetComponent<Node>().Player.CountNodes;
+					--neiborNode.Player.CountNodes;
 				}
-				neiborNode.GetComponent<Node>().Player = player;
+				neiborNode.Player = player;
 
-				if (neiborNode.childCount > 3)
+				if (neiborNode.transform.childCount > 3)
 				{
 					order.Enqueue(neiborNode);
 				}

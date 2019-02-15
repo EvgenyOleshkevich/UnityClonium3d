@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class Node : MonoBehaviour {
 	public GameObject originalBall;
-	public GameObject Main;
-	public Player Player;
+	private GameObject main;
+	public Player Player { get; set; }
 	public Transform[] Neibors { get; set; }
 	public Color Color;
 
@@ -13,6 +13,7 @@ public class Node : MonoBehaviour {
 	{
 		Color = Color.white;
 		this.GetComponent<Renderer>().material.color = Color;
+		main = this.transform.parent.GetComponent<Floor>().main;
 	}
 
 	public void Initialization(Player _player)
@@ -47,21 +48,25 @@ public class Node : MonoBehaviour {
 
 	public void OnMouseDown()
 	{
+		if (Player == null)
+		{
+			return;
+		}
 		int numberPlayer = Player.Number;
-		if ((numberPlayer == Main.GetComponent<Main>().IndexPlayers) 
-			&& (!Main.GetComponent<Main>().Stop))
+		if ((numberPlayer == main.GetComponent<Main>().IndexPlayers) 
+			&& (!main.GetComponent<Main>().Stop))
 		{
 			// creating new ball
-			Main.GetComponent<Main>().Stop = true;
-			Instantiate(originalBall, this.transform);
+			main.GetComponent<Main>().Stop = true;
+			Instantiate(originalBall, transform);
 			Alignment();
 			if (this.transform.childCount > 3)
 			{
-				StartCoroutine(this.transform.parent.GetComponent<Floor>().DisclosureMain(Player));
+				StartCoroutine(this.transform.parent.GetComponent<Floor>().DisclosureMain(this, Player));
 			}
 			else
 			{
-				Main.GetComponent<Main>().UpdatePlayer();
+				main.GetComponent<Main>().UpdatePlayer();
 			}
 		}
 	}
