@@ -12,8 +12,8 @@ public class Node : MonoBehaviour {
 	void Start()
 	{
 		Color = Color.white;
-		this.GetComponent<Renderer>().material.color = Color;
-		main = this.transform.parent.GetComponent<Floor>().main;
+		GetComponent<Renderer>().material.color = Color;
+		//main = transform.parent.GetComponent<Floor>().main;
 	}
 
 	public void Initialization(Player _player)
