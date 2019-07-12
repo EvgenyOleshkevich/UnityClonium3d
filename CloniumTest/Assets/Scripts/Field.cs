@@ -5,22 +5,50 @@ using UnityEngine;
 
 public enum TypeField { triangle, square, hexagon, mixed, d3_triangle, d3_square, d3_hexagon, d3_mixed };
 
+public enum MethodCreating { newField, playerField, librariesField };
 
 public class Field : MonoBehaviour {
 
 	public int Index { get; private set; }
 	public int Size { get; set; }
-	public TypeField Type { get; set; }
+	public TypeField Type;
+	public MethodCreating Method;
 	private Node[] nodes;
 	public Vector3 Center;
-	//public Vector3 Center { get; private set; }
 	public CameraScr Camera { get; private set; }
 
 
-	public void Init(int index, int size, TypeField type)
+	public void Init(int index, int size, TypeField type, MethodCreating method)
 	{
 		Index = index;
 		Size = size;
+		Type = type;
+		Method = method;
+		if (Camera == null)
+		{
+			Camera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CameraScr>();
+			Camera.Field = this;
+			Camera.Fi = 0;
+			Camera.Psi = Math.PI / 3;
+		}
+		if (Type == TypeField.square)
+		{
+			InitSquare();
+		}
+
+	}
+
+	public void Init(int size)
+	{
+		Size = size;
+		if (Type == TypeField.square)
+		{
+			InitSquare();
+		}
+	}
+
+	public void Init(TypeField type)
+	{
 		Type = type;
 		if (Type == TypeField.square)
 		{
@@ -28,9 +56,8 @@ public class Field : MonoBehaviour {
 		}
 	}
 
-	public void Init(int size)
+	public void Init()
 	{
-		Size = size;
 		if (Type == TypeField.square)
 		{
 			InitSquare();
@@ -47,7 +74,7 @@ public class Field : MonoBehaviour {
 		{
 			var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
 
-			plane.transform.position = new Vector3(12 * (i % Size), 0, 12 * (i / Size));
+			plane.transform.position = new Vector3(12 * (i % Size), 0, 12 * (i / Size)) + transform.position;
 			Center += plane.transform.position;
 			plane.transform.SetParent(transform);
 
@@ -81,25 +108,22 @@ public class Field : MonoBehaviour {
 		}
 
 		Center /= Size * Size;
-		// camera transforming
-		if (Camera == null)
-		{
-			Camera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CameraScr>();
-			Camera.Field = this;
-			Camera.Fi = 0;
-			Camera.Psi = Math.PI / 3;
-		}
 
-		Camera.Radius = Math.Sqrt(Center.sqrMagnitude) * 1.7;
+		Camera.Radius = Math.Sqrt((Center - transform.position).sqrMagnitude) * 1.7;
 		Camera.Transforming();
 	}
 
 	public void DestroyField()
 	{
+		if (nodes == null)
+		{
+			return;
+		}
 		foreach (Node node in nodes)
 		{
 			Destroy(node.gameObject);
 		}
+		nodes = null;
 	}
 
 	// Use this for initialization

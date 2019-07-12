@@ -4,19 +4,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraScr : MonoBehaviour {
-	//public Field Field { get; set; }
-	public Field Field;
-	//public double Fi { get; set; }
-	//public double Psi { get; set; }
-	//public double Radius { get; set; }
-	public double Fi;
-	public double Psi;
-	public double Radius;
+	public Field Field { get; set; }
+	// public Field Field;
+	public double Fi { get; set; }
+	public double Psi { get; set; }
+	public double Radius { get; set; }
+	//public double Fi;
+	//public double Psi;
+	//public double Radius;
+	private double zoom = 1;
 
 
 	// Use this for initialization
 	void Start () {
-		
 	}
 	
 	// Update is called once per frame
@@ -44,20 +44,20 @@ public class CameraScr : MonoBehaviour {
 		float mouseWheel = Input.GetAxis("Mouse ScrollWheel");
 		if (mouseWheel > 0.1)
 		{
-			Radius = Math.Min(200, Radius + 4);
+			zoom = Math.Min(1.5, zoom + 0.1);
 			Transforming();
 		}
 		if (mouseWheel < -0.1)
 		{
-			Radius = Math.Max(20, Radius - 4);
+			zoom = Math.Max(0.3, zoom - 0.1);
 			Transforming();
 		}
 	}
 
 	public void Transforming()
 	{
-		transform.position = new Vector3((float)(Radius * Math.Cos(Fi) * Math.Sin(Psi)),
-			(float)(Radius * Math.Cos(Psi)), (float)(Radius * Math.Sin(Fi) * Math.Sin(Psi))) + Field.Center;
+		transform.position = new Vector3((float)(zoom * Radius * Math.Cos(Fi) * Math.Sin(Psi)),
+			(float)(zoom * Radius * Math.Cos(Psi)), (float)(zoom * Radius * Math.Sin(Fi) * Math.Sin(Psi))) + Field.Center;
 		Quaternion lookRatation = Quaternion.LookRotation(Field.Center - transform.position);
 		transform.rotation = lookRatation;
 	}
