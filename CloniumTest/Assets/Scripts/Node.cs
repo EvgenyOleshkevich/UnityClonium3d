@@ -3,33 +3,32 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Node : MonoBehaviour {
-	public GameObject originalBall;
-	private GameObject main;
 	public Player Player { get; set; }
-	public Transform[] Neibors { get; set; }
-	public Color Color;
+	public GameObject[] Neibors { get; set; }
+	public Color Color { get; set; }
+	public Field Field { get; private set; }
 
 	void Start()
 	{
 		Color = Color.white;
+		Field = transform.parent.GetComponent<Field>();
 		GetComponent<Renderer>().material.color = Color;
 		//main = transform.parent.GetComponent<Floor>().main;
 	}
 
-	public void Initialization(Player _player)
+	public void Initialization(Player player)
 	{
-		Player = _player;
-		Color = Player.Color;
-		this.GetComponent<Renderer>().material.color = Color;
-		Instantiate(originalBall, this.transform);
-		Instantiate(originalBall, this.transform);
-		Instantiate(originalBall, this.transform);
+		Player = player;
+		SetColor(Player.Color);
+		Instantiate(Field.Fields.OriginalBall, transform);
+		Instantiate(Field.Fields.OriginalBall, transform);
+		Instantiate(Field.Fields.OriginalBall, transform);
 		Alignment();
 	}
 
-	public void AddNeibors(Transform u, Transform r, Transform d, Transform l)
+	public void AddNeibors(GameObject u, GameObject r, GameObject d, GameObject l)
 	{
-		Neibors = new Transform[4];
+		Neibors = new GameObject[4];
 		Neibors[0] = u;
 		Neibors[1] = r;
 		Neibors[2] = d;
@@ -38,66 +37,110 @@ public class Node : MonoBehaviour {
 
 	public void OnMouseEnter()
 	{
-		this.GetComponent<Renderer>().material.color = Color.Lerp(Color.white, Color, 0.8f);
+		//if (Field.RedactionField.Mode == Mode.spawnPort)
+		//{
+		//	var t = Input.mousePosition + Field.transform.position;
+		//	GameObject.CreatePrimitive(PrimitiveType.Capsule).transform.position = t;
+		//	var y = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+		//	GameObject.CreatePrimitive(PrimitiveType.Capsule).transform.position = y;
+		//}
+		GetComponent<Renderer>().material.color = Color.Lerp(Color.white, Color, 0.8f);
 	}
 
 	public void OnMouseExit()
 	{
-		this.GetComponent<Renderer>().material.color = Color;
+		GetComponent<Renderer>().material.color = Color;
 	}
 
 	public void OnMouseDown()
+	{
+		switch (Field.Fields.Mode)
+		{
+			case Mode.none:
+				return;
+			case Mode.cutting:
+				Field.CutNode(this);
+				return;
+			case Mode.spawnPlayer:
+				Field.SpawnPlayer(this);
+				return;
+			case Mode.spawnPort:
+				if (Color != Color.red
+					&& Color != Color.blue)
+				{
+					Field.SpawnPort(this);
+				}
+				return;
+			case Mode.spawnPort3:
+				if (Color != Color.red
+					&& Color != Color.blue)
+				{
+					Field.SpawnPort(this);
+				}
+				return;
+			case Mode.playing:
+				ClickInGame();
+				return;
+		}
+	}
+
+	public void ClickInGame()
 	{
 		if (Player == null)
 		{
 			return;
 		}
-		int numberPlayer = Player.Number;
-		if ((numberPlayer == main.GetComponent<Main>().IndexPlayers) 
-			&& (!main.GetComponent<Main>().Stop))
+		if ((Player == Field.Fields.Main.Player)
+			&& (!Field.Fields.Main.Stop))
 		{
 			// creating new ball
-			main.GetComponent<Main>().Stop = true;
-			Instantiate(originalBall, transform);
+			Field.Fields.Main.Stop = true;
+			Instantiate(Field.Fields.OriginalBall, transform);
 			Alignment();
-			if (this.transform.childCount > 3)
+			if (transform.childCount > 3)
 			{
-				StartCoroutine(this.transform.parent.GetComponent<Floor>().DisclosureMain(this, Player));
+				StartCoroutine(Field.DisclosureMain(this, Player));
 			}
 			else
 			{
-				main.GetComponent<Main>().UpdatePlayer();
+				Field.Fields.Main.UpdatePlayer();
 			}
 		}
 	}
 
-	void Alignment()
+	private void Alignment()
 	{
-		Vector3 PositionBall = this.transform.position;
+		Vector3 PositionBall = transform.position;
 		PositionBall.y += 1f;
-		if (this.transform.childCount > 0)
+		if (transform.childCount > 0)
 		{
-			PositionBall.z -= 1f;
-			this.transform.GetChild(0).position = PositionBall;
-			PositionBall.z += 1f;
+			PositionBall.z -= 3f;
+			transform.GetChild(0).position = PositionBall;
+			PositionBall.z += 3f;
 		}
-		if (this.transform.childCount > 1)
+		if (transform.childCount > 1)
 		{
-			PositionBall.z += 1f;
-			this.transform.GetChild(1).position = PositionBall;
-			PositionBall.z -= 1f;
+			PositionBall.z += 3f;
+			transform.GetChild(1).position = PositionBall;
+			PositionBall.z -= 3f;
 		}
-		if (this.transform.childCount > 2)
+		if (transform.childCount > 2)
 		{
-			PositionBall.x -= 1f;
-			this.transform.GetChild(2).position = PositionBall;
-			PositionBall.x += 1f;
+			PositionBall.x -= 3f;
+			transform.GetChild(2).position = PositionBall;
+			PositionBall.x += 3f;
 		}
-		if (this.transform.childCount > 3)
+		if (transform.childCount > 3)
 		{
-			PositionBall.x += 1f;
-			this.transform.GetChild(3).position = PositionBall;
-			PositionBall.x -= 1f;
+			PositionBall.x += 3f;
+			transform.GetChild(3).position = PositionBall;
+			PositionBall.x -= 3f;
 		}
+	}
+
+	public void SetColor(Color color)
+	{
+		Color = color;
+		GetComponent<Renderer>().material.color = color;
 	}
 }

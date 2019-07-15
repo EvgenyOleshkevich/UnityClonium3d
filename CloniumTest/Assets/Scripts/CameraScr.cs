@@ -5,13 +5,9 @@ using UnityEngine;
 
 public class CameraScr : MonoBehaviour {
 	public Field Field { get; set; }
-	// public Field Field;
 	public double Fi { get; set; }
 	public double Psi { get; set; }
 	public double Radius { get; set; }
-	//public double Fi;
-	//public double Psi;
-	//public double Radius;
 	private double zoom = 1;
 
 

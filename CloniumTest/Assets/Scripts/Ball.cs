@@ -17,35 +17,35 @@ public class Ball : MonoBehaviour
 		{
 			return;
 		}
-		Vector3 DirectionToParent = positionParent - this.transform.position;
+		Vector3 DirectionToParent = positionParent - transform.position;
 		if (DirectionToParent.magnitude < 0.05f)
 		{
 			StopUpdate = true;
 			return;
 		}
-		this.transform.Translate(DirectionToParent * speed * Time.deltaTime);
+		transform.Translate(DirectionToParent * speed * Time.deltaTime);
 	}
 
 	public void AlignmentBall()
 	{
-		positionParent = this.transform.parent.position;
+		positionParent = transform.parent.position;
 		positionParent.y += 1f;
-		int CountChild = this.transform.parent.childCount;
+		int CountChild = transform.parent.childCount;
 		if (CountChild == 1)
 		{
-			positionParent.z -= 1f;
+			positionParent.z -= 3f;
 		}
 		if (CountChild == 2)
 		{
-			positionParent.z += 1f;
+			positionParent.z += 3f;
 		}
 		if (CountChild == 3)
 		{
-			positionParent.x -= 1f;
+			positionParent.x -= 3f;
 		}
 		if (CountChild == 4)
 		{
-			positionParent.x += 1f;
+			positionParent.x += 3f;
 		}
 		StopUpdate = false;
 		Update();
@@ -60,15 +60,28 @@ public class Ball : MonoBehaviour
 
 	void OnMouseEnter()
 	{
-		this.transform.GetComponentInParent<Node>().OnMouseEnter();
+		var node = transform.GetComponentInParent<Node>();
+		if (node)
+		{
+			node.OnMouseEnter();
+		}
 	}
 
 	void OnMouseExit()
 	{
-		this.transform.GetComponentInParent<Node>().OnMouseExit();
+		var node = transform.GetComponentInParent<Node>();
+		if (node)
+		{
+			node.OnMouseExit();
+		}
 	}
+
 	void OnMouseDown()
 	{
-		this.transform.GetComponentInParent<Node>().OnMouseDown();
+		var node = transform.GetComponentInParent<Node>();
+		if (node)
+		{
+			node.OnMouseDown();
+		}
 	}
 }

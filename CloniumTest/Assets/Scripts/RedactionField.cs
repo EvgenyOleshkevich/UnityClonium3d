@@ -6,18 +6,29 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class RedactionField : MonoBehaviour {
-	public StartGameData data;
+	public Button next;
+	public GameObject OriginalBall;
+
+	private StartGameData data;
 	public Field[] Fields { get; private set; }
 	public Field CurrentField { get; private set; }
-	public Slider sliderSize;
-	public Text textSize;
 	private CameraScr Camera { get; set; }
+	public int RemainSpawnPlayer { get; set; }
+	public Mode Mode;
+	public Teleport Port { get; set; }
+	public List<Teleport> Ports { get; private set; }
+	public Main Main { get; private set; }
+	
 
 	// Use this for initialization
-	void Start () {
+	void Start() {
 		//data = GameObject.FindGameObjectWithTag("startGameData").GetComponent<StartGameData>();
 		Camera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CameraScr>();
-		data = new StartGameData { StepTime = 40, CountField = 3, CountPlayer = 6, SpawnPlayer = false, SpawnPort = false};
+		data = new StartGameData { StepTime = 40, CountField = 2, CountPlayer = 1, SpawnPlayer = false, SpawnPort = false };
+
+		Ports = new List<Teleport>();
+		Mode = Mode.none;
+		RemainSpawnPlayer = data.CountPlayer;
 
 		Fields = new Field[data.CountField];
 		for (int i = 0; i < data.CountField; ++i)
@@ -26,11 +37,34 @@ public class RedactionField : MonoBehaviour {
 			field.transform.position = new Vector3(-10000 + i * 10000, 0, 0);
 			field.AddComponent<Field>();
 			Fields[i] = field.GetComponent<Field>();
-			Fields[i].Init(i, 10, TypeField.square, MethodCreating.newField);
+			Fields[i].Init(6, TypeField.square, MethodCreating.newField, this);
 		}
 		CurrentField = Fields[0];
 		CurrentField.Camera.Field = CurrentField;
 		CurrentField.Camera.Transforming();
+
+		// preparing dropdown for cutting, spawn
+		var panel = transform.GetChild(4).GetComponent<Dropdown>();
+		if (panel == null)
+		{
+			throw new Exception("incorrect child index");
+		}
+		var listOption = new List<Dropdown.OptionData>()
+		{
+			new Dropdown.OptionData("none"),
+			new Dropdown.OptionData("cutting field")
+		};
+		if (!data.SpawnPlayer)
+		{
+			listOption.Add(new Dropdown.OptionData("spawn player"));
+		}
+		else
+		{
+			RemainSpawnPlayer = 0;
+			next.interactable = true;
+		}
+		
+		panel.AddOptions(listOption);
 	}
 	
 	// Update is called once per frame
@@ -55,6 +89,17 @@ public class RedactionField : MonoBehaviour {
 		Camera.Field = CurrentField;
 		Camera.Radius = Math.Sqrt((CurrentField.Center - CurrentField.transform.position).sqrMagnitude) * 1.7;
 		Camera.Transforming();
+
+		if ((int)Mode > 2)
+		{
+			return;
+		}
+
+		var sliderSize = transform.GetChild(1).GetComponent<Slider>();
+		if (sliderSize == null)
+		{
+			throw new Exception("incorrect child index");
+		}
 		sliderSize.value = CurrentField.Size;
 
 		var dropdown = transform.GetChild(2).GetComponent<Dropdown>();
@@ -77,10 +122,16 @@ public class RedactionField : MonoBehaviour {
 			throw new Exception("incorrect child index");
 		}
 		methodCreating.value = (int)CurrentField.Method;
+
 	}
 
 	public void SizeFieldSlider()
 	{
+		var sliderSize = transform.GetChild(1).GetComponent<Slider>();
+		if (sliderSize == null)
+		{
+			throw new Exception("incorrect child index");
+		}
 		int size = (int)sliderSize.value;
 		//sliderSize.enabled = false; // for dont trigger on arrow
 		//sliderSize.enabled = true; // for dont trigger on arrow
@@ -88,7 +139,8 @@ public class RedactionField : MonoBehaviour {
 		sliderSize.interactable = true; // for dont trigger on arrow
 		CurrentField.DestroyField();
 		CurrentField.Init(size);
-		textSize.text = "size field " + size.ToString();
+		sliderSize.transform.GetChild(0).GetComponent<Text>().text = "size field " + size.ToString();
+		UpdateMode();
 	}
 
 	public void SetTypeField()
@@ -110,6 +162,7 @@ public class RedactionField : MonoBehaviour {
 			type += 4;
 		}
 		CurrentField.Init((TypeField)type);
+		UpdateMode();
 	}
 
 	public void SetMethodCreatingField()
@@ -119,12 +172,114 @@ public class RedactionField : MonoBehaviour {
 		{
 			throw new Exception("incorrect child index");
 		}
-
+		UpdateMode();
 	}
 
 	public void BackToMenu()
 	{
-		Destroy(data.transform);
+		//Destroy(data.transform);
 		SceneManager.LoadScene("menu", LoadSceneMode.Single);
+	}
+
+	public void Next()
+	{
+		
+		if (Fields.Length == 1
+			&& data.SpawnPlayer)
+		{
+			Destroy(transform.GetChild(4).gameObject);
+			Destroy(transform.GetChild(3).gameObject);
+			Destroy(transform.GetChild(2).gameObject);
+			Destroy(transform.GetChild(1).gameObject);
+			AutoSpawnPlayer();
+		}
+		else
+		{
+			if (data.SpawnPort)
+			{
+				AutoSpawnPort();
+			}
+			else
+			{
+				if (CheckingConnection())
+				{
+					Ports = null;
+				}
+				else
+				{
+					Destroy(transform.GetChild(4).gameObject);
+					Destroy(transform.GetChild(3).gameObject);
+					Destroy(transform.GetChild(2).gameObject);
+					Destroy(transform.GetChild(1).gameObject);
+					Mode = Mode.spawnPort;
+					next.interactable = false;
+					return;
+				}
+			}
+			if (data.SpawnPlayer)
+			{
+				AutoSpawnPlayer();
+			}
+		}
+		var text = transform.GetChild(2).GetComponent<Text>();
+		Destroy(transform.GetChild(1).gameObject);
+		Mode = Mode.playing;
+		next = null;
+		Port = null;
+		data = null;
+
+		foreach (var item in Fields)
+		{
+			item.WhitePrintingNodes();
+		}
+		
+		text.transform.position -= new Vector3(0, 70, 0);
+		Main = new Main(Fields, text);
+		
+	}
+
+	public bool CheckingConnection()
+	{
+		var set = new HashSet<Field>();
+		foreach (var item in Ports)
+		{
+			set.Add(item.Field);
+		}
+		return set.Count == Fields.Length;
+	}
+
+	private void AutoSpawnPort() {
+
+		if (data.SpawnPlayer)
+		{
+			AutoSpawnPlayer();
+		}
+	}
+
+	private void AutoSpawnPlayer()
+	{
+
+	}
+
+	public void SetMode()
+	{
+		// cheking panel
+		var panel = transform.GetChild(4).GetComponent<Dropdown>();
+		if (panel == null)
+		{
+			throw new Exception("incorrect child index");
+		}
+		// 0 - none, 1 - cutting, 2 - player, 3 - port
+		Mode = (Mode)panel.value;
+	}
+
+	private void UpdateMode()
+	{
+		var panel = transform.GetChild(4).GetComponent<Dropdown>();
+		if (panel == null)
+		{
+			throw new Exception("incorrect child index");
+		}
+		panel.value = 0;
 	}
 }
