@@ -12,27 +12,27 @@ public class RedactionField : MonoBehaviour {
 	private StartGameData data;
 	public Field[] Fields { get; private set; }
 	public Field CurrentField { get; private set; }
-	private CameraScr Camera { get; set; }
+	public CameraScr Camera { get; private set; }
 	public int RemainSpawnPlayer { get; set; }
 	public Mode Mode;
 	public Teleport Port { get; set; }
 	public List<KeyValuePair<Teleport, Teleport>> Ports;
-	public Main Main { get; private set; }
+	public GameController Main { get; private set; }
 	
 
 	// Use this for initialization
 	void Start() {
 		//data = GameObject.FindGameObjectWithTag("startGameData").GetComponent<StartGameData>();
-		Camera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CameraScr>();
-		data = GameObject.FindGameObjectWithTag("startGameData").GetComponent<StartGameData>();
 		Destroy(GameObject.FindGameObjectWithTag("startGameData"));
-		//data = new StartGameData { StepTime = 40, CountField = 2, CountPlayer = 1, SpawnPlayer = false, SpawnPort = false };
+		data = new StartGameData { StepTime = 40, CountField = 2, CountPlayer = 4, SpawnPlayer = true, SpawnPort = false };
 
 		Ports = new List<KeyValuePair<Teleport, Teleport>>();
 		Mode = Mode.none;
 		RemainSpawnPlayer = data.CountPlayer;
 
 		Fields = new Field[data.CountField];
+		Camera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CameraScr>();
+
 		for (int i = 0; i < data.CountField; ++i)
 		{
 			var field = new GameObject();
@@ -41,9 +41,15 @@ public class RedactionField : MonoBehaviour {
 			Fields[i] = field.GetComponent<Field>();
 			Fields[i].Init(6, TypeField.square, MethodCreating.newField, this);
 		}
+		// preparing camera 
 		CurrentField = Fields[0];
-		CurrentField.Camera.Field = CurrentField;
-		CurrentField.Camera.Transforming();
+	
+		Camera.Field = CurrentField;
+		Camera.Fi = 0;
+		Camera.Psi = Math.PI / 3;
+		Camera.Radius = Math.Sqrt((CurrentField.Center - CurrentField.transform.position).sqrMagnitude) * 1.7;
+		Camera.Transforming();
+
 
 		// preparing dropdown for cutting, spawn
 		var panel = transform.GetChild(4).GetComponent<Dropdown>();
@@ -135,14 +141,11 @@ public class RedactionField : MonoBehaviour {
 			throw new Exception("incorrect child index");
 		}
 		int size = (int)sliderSize.value;
-		//sliderSize.enabled = false; // for dont trigger on arrow
-		//sliderSize.enabled = true; // for dont trigger on arrow
 		sliderSize.interactable = false; // for dont trigger on arrow
 		sliderSize.interactable = true; // for dont trigger on arrow
 		CurrentField.DestroyField();
 		CurrentField.Init(size);
 		sliderSize.transform.GetChild(0).GetComponent<Text>().text = "size field " + size.ToString();
-		UpdateMode();
 	}
 
 	public void SetTypeField()
@@ -164,7 +167,6 @@ public class RedactionField : MonoBehaviour {
 			type += 4;
 		}
 		CurrentField.Init((TypeField)type);
-		UpdateMode();
 	}
 
 	public void SetMethodCreatingField()
@@ -174,7 +176,6 @@ public class RedactionField : MonoBehaviour {
 		{
 			throw new Exception("incorrect child index");
 		}
-		UpdateMode();
 	}
 
 	public void BackToMenu()
@@ -194,24 +195,24 @@ public class RedactionField : MonoBehaviour {
 		}
 		if (data.SpawnPort)
 		{
-			Destroy(transform.GetChild(5).gameObject);
 			AutoSpawnPort();
 		}
 		else
 		{
-			if (Mode != Mode.spawnPort)
+			if (Mode != Mode.spawnPort1)
 			{
-				Mode = Mode.spawnPort;
+				Mode = Mode.spawnPort1;
 				next.interactable = CheckingConnection();
 				return;
 			}
+			
 		}
 		if (data.SpawnPlayer)
 		{
 			AutoSpawnPlayer();
 		}
-		var text = transform.GetChild(2).GetComponent<Text>();
-		Destroy(transform.GetChild(1).gameObject);
+		var text = transform.GetChild(transform.childCount - 1).GetComponent<Text>();
+		Destroy(next.gameObject);
 		Mode = Mode.playing;
 		next = null;
 		Port = null;
@@ -224,7 +225,7 @@ public class RedactionField : MonoBehaviour {
 		}
 		
 		text.transform.position -= new Vector3(0, 70, 0);
-		Main = new Main(Fields, text);
+		Main = new GameController(Fields, text);
 		
 	}
 
@@ -244,16 +245,34 @@ public class RedactionField : MonoBehaviour {
 	}
 
 	private void AutoSpawnPort() {
-
-		if (data.SpawnPlayer)
-		{
-			AutoSpawnPlayer();
-		}
 	}
 
 	private void AutoSpawnPlayer()
 	{
-
+		
+		var nodesList = new List<Node>();
+		foreach (var Field in Fields)
+		{
+			foreach (var node in Field.Nodes)
+			{
+				nodesList.Add(node);
+			}
+			
+		}
+		var nodes = nodesList.ToArray();
+		Mode = Mode.spawnPlayer;
+		var rand = new System.Random();
+		RemainSpawnPlayer = data.CountPlayer;
+		while (RemainSpawnPlayer != 0)
+		{
+			Debug.Log(RemainSpawnPlayer.ToString());
+			int index = 0;
+			do
+			{
+				index = rand.Next() % nodes.Length;
+			} while (nodes[index].Color != Color.white);
+			nodes[index].OnMouseDown();
+		}
 	}
 
 	public void SetMode()

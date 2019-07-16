@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Main {
+public class GameController {
 	private Queue<Player> Players { get; set; }
 	public Player Player { get; private set; }
 	public Text AboutPlayers;
 	public bool Stop { get; set; }
 	private Field[] Fields { get; set; }
 
-	public Main(Field[] fields, Text text)
+	public GameController(Field[] fields, Text text)
 	{
 		Players = new Queue<Player>();
 		AboutPlayers = text;

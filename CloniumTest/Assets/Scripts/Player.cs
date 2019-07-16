@@ -17,7 +17,8 @@ public class Player {
 		Index = index;
 		CountBalls = 3;
 		CountNodes = 1;
-		var rand = new Random((int)(Index * DateTime.Now.ToBinary()));
-		Color = new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble());
+		var rand = new Random();
+		//var rand = new Random((int)(Index * DateTime.Now.ToBinary()));
+		Color = new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), 1f);
 	}
 }

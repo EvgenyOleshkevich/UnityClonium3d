@@ -64,7 +64,7 @@ public class Node : MonoBehaviour {
 			case Mode.spawnPlayer:
 				Field.SpawnPlayer(this);
 				return;
-			case Mode.spawnPort:
+			case Mode.spawnPort1:
 				if (Color != Color.red
 					&& Color != Color.blue)
 				{

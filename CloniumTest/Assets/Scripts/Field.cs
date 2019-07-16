@@ -7,7 +7,7 @@ public enum TypeField { triangle, square, hexagon, mixed, d3_triangle, d3_square
 
 public enum MethodCreating { newField, playerField, librariesField };
 
-public enum Mode { none, cutting, spawnPlayer, spawnPort, spawnPort2, spawnPort3, spawnPort4, playing };
+public enum Mode { none, cutting, spawnPlayer, spawnPort1, spawnPort2, spawnPort3, spawnPort4, playing };
 
 public class Field : MonoBehaviour {
 
@@ -15,9 +15,9 @@ public class Field : MonoBehaviour {
 	public int Size { get; private set; }
 	public TypeField Type { get; set; }
 	public MethodCreating Method { get; set; }
-	private Node[] nodes;
+	public Node[] Nodes { get; private set; }
 	public Vector3 Center { get; private set; }
-	public CameraScr Camera { get; private set; }
+	//public CameraScr Camera { get; private set; }
 	public RedactionField Fields { get; set; }
 	private readonly int minimalNodes = 24;
 	private Teleport[] ports;
@@ -36,19 +36,11 @@ public class Field : MonoBehaviour {
 
 	public void Init(int size, TypeField type, MethodCreating method, RedactionField redactionField)
 	{
-		//Index = index;
 		Size = size;
 		Type = type;
 		Method = method;
-		//Mode = Mode.none;
 		Fields = redactionField;
-		if (Camera == null)
-		{
-			Camera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CameraScr>();
-			Camera.Field = this;
-			Camera.Fi = 0;
-			Camera.Psi = Math.PI / 3;
-		}
+
 		if (Type == TypeField.square)
 		{
 			InitSquare();
@@ -85,7 +77,7 @@ public class Field : MonoBehaviour {
 	private void InitSquare()
 	{
 		
-		nodes = new Node[Size * Size];
+		Nodes = new Node[Size * Size];
 		Center = new Vector3();
 		// creating plane
 		for (int i = 0; i < Size * Size; ++i)
@@ -98,7 +90,7 @@ public class Field : MonoBehaviour {
 			plane.transform.SetParent(transform);
 
 			plane.AddComponent<Node>();
-			nodes[i] = plane.GetComponent<Node>();
+			Nodes[i] = plane.GetComponent<Node>();
 		}
 		// addition neibors
 		for (int i = 0; i < Size * Size; ++i)
@@ -109,45 +101,55 @@ public class Field : MonoBehaviour {
 			GameObject l = null;
 			if (i % Size != Size - 1)
 			{
-				u = nodes[i + 1].gameObject;
+				u = Nodes[i + 1].gameObject;
 			}
 			if (i % Size != 0)
 			{
-				d = nodes[i - 1].gameObject;
+				d = Nodes[i - 1].gameObject;
 			}
 			if (i > Size - 1)
 			{
-				l = nodes[i - Size].gameObject;
+				l = Nodes[i - Size].gameObject;
 			}
 			if (i < Size * (Size - 1))
 			{
-				r = nodes[i + Size].gameObject;
+				r = Nodes[i + Size].gameObject;
 			}
-			nodes[i].AddNeibors(u, r, d, l);
+			Nodes[i].AddNeibors(u, r, d, l);
 		}
 
 		Center /= Size * Size;
-
-		Camera.Radius = Math.Sqrt((Center - transform.position).sqrMagnitude) * 1.7;
-		Camera.Transforming();
+		Fields.Camera.Field = this;
+		Fields.Camera.Radius = Math.Sqrt((Center - transform.position).sqrMagnitude) * 1.7;
+		Fields.Camera.Transforming();
 	}
 
 	public void DestroyField()
 	{
-		if (nodes == null)
+		if (Nodes == null)
 		{
 			return;
 		}
-		foreach (Node node in nodes)
+		int countRedNodes = 0;
+		foreach (Node node in Nodes)
 		{
+			if (node.Color == Color.red)
+			{
+				++countRedNodes;
+			}
 			Destroy(node.gameObject);
 		}
-		nodes = null;
+		if (countRedNodes != 0)
+		{
+			Fields.RemainSpawnPlayer += countRedNodes;
+			Fields.next.interactable = false;
+		}
+		Nodes = null;
 	}
 
 	public void CutNode(Node node)
 	{
-		if (nodes.Length == minimalNodes)
+		if (Nodes.Length == minimalNodes)
 		{
 			return;
 		}
@@ -168,16 +170,16 @@ public class Field : MonoBehaviour {
 		}
 		i = 0;
 		int k = 0;
-		var newNodes = new Node[nodes.Length - 1];
-		for (; i < nodes.Length; i++)
+		var newNodes = new Node[Nodes.Length - 1];
+		for (; i < Nodes.Length; i++)
 		{
-			if (nodes[i] != node)
+			if (Nodes[i] != node)
 			{
-				newNodes[k] = nodes[i];
+				newNodes[k] = Nodes[i];
 				++k;
 			}
 		}
-		nodes = newNodes;
+		Nodes = newNodes;
 		var color = node.Color; 
 		Destroy(node.gameObject);
 		if (color == Color.red)
@@ -205,7 +207,7 @@ public class Field : MonoBehaviour {
 			return;
 		}
 
-		PrintColorAround(node);
+		PrintColorAroundRed(node);
 
 		--Fields.RemainSpawnPlayer;
 		if (Fields.RemainSpawnPlayer == 0)
@@ -216,7 +218,7 @@ public class Field : MonoBehaviour {
 
 	private void UpdateColorNodes()
 	{
-		foreach (var node in nodes)
+		foreach (var node in Nodes)
 		{
 			if (node.Color == Color.blue
 				|| node.Color == Color.green)
@@ -224,18 +226,18 @@ public class Field : MonoBehaviour {
 				node.SetColor(Color.white);
 			}
 		}
-		foreach (var node in nodes)
+		foreach (var node in Nodes)
 		{
 			if (node.Color == Color.red)
 			{
-				PrintColorAround(node);
+				PrintColorAroundRed(node);
 			}
 		}
 	}
 
 	public void WhitePrintingNodes()
 	{
-		foreach (var node in nodes)
+		foreach (var node in Nodes)
 		{
 			if (node.Color == Color.blue
 				|| node.Color == Color.green)
@@ -245,37 +247,51 @@ public class Field : MonoBehaviour {
 		}
 	}
 
-	private void PrintColorAround(Node node)
+	private void PrintColorAroundRed(Node node)
 	{
+		//for (int i = 0; i < node.Neibors.Length; i++)
+		//{
+		//	if (node.Neibors[i] != null && node.Neibors[i].tag == "node")
+		//	{
+		//		for (int j = 0; j < node.Neibors[i].GetComponent<Node>().Neibors.Length; j++)
+		//		{
+		//			if (node.Neibors[i].GetComponent<Node>().Neibors[j] != null
+		//				&& node.Neibors[i].GetComponent<Node>().Neibors[j].tag == "node"
+		//				&& node.Neibors[i].GetComponent<Node>().Neibors[j].GetComponent<Node>().Color == Color.white)
+		//			{
+		//				node.Neibors[i].GetComponent<Node>().Neibors[j].GetComponent<Node>().SetColor(Color.green);
+		//			}
+		//		}
+		//	}
+		//}
 		for (int i = 0; i < node.Neibors.Length; i++)
 		{
 			if (node.Neibors[i] != null && node.Neibors[i].tag == "node")
 			{
-				for (int j = 0; j < node.Neibors[i].GetComponent<Node>().Neibors.Length; j++)
-				{
-					if (node.Neibors[i].GetComponent<Node>().Neibors[j] != null
-						&& node.Neibors[i].GetComponent<Node>().Neibors[j].tag == "node"
-						&& node.Neibors[i].GetComponent<Node>().Neibors[j].GetComponent<Node>().Color == Color.white)
-					{
-						node.Neibors[i].GetComponent<Node>().Neibors[j].GetComponent<Node>().SetColor(Color.green);
-					}
-				}
-			}
-		}
-		for (int i = 0; i < node.Neibors.Length; i++)
-		{
-			if (node.Neibors[i] != null && node.Neibors[i].tag == "node")
-			{
-				node.Neibors[i].GetComponent<Node>().SetColor(Color.blue);
+				PrintColorAroundBlue(node.Neibors[i].GetComponent<Node>()); 
+				//.SetColor(Color.blue);
 			}
 		}
 		node.SetColor(Color.red);
 	}
 
+	private void PrintColorAroundBlue(Node node)
+	{
+		for (int i = 0; i < node.Neibors.Length; i++)
+		{
+			if (node.Neibors[i] != null && node.Neibors[i].tag == "node")
+			{
+				node.Neibors[i].GetComponent<Node>().SetColor(Color.green);
+			}
+		}
+		node.SetColor(Color.blue);
+	}
+
 	public void SpawnPort(Node node)
 	{
 		Fields.next.interactable = false;
-		node.SetColor(Color.blue);
+		PrintColorAroundBlue(node);
+
 		ports = new Teleport[node.Neibors.Length];
 		for (int i = 0; i < node.Neibors.Length; i++)
 		{
@@ -305,7 +321,7 @@ public class Field : MonoBehaviour {
 			ports[i].transform.rotation = lookRatation;
 			ports[i].transform.localScale = new Vector3(8, 1, 8);
 		}
-		if (Fields.Mode == Mode.spawnPort)
+		if (Fields.Mode == Mode.spawnPort1)
 		{
 			Fields.Mode = Mode.spawnPort2;
 		}
@@ -344,7 +360,7 @@ public class Field : MonoBehaviour {
 		}
 		port.ExitTeleport = Fields.Port;
 		Fields.Port.ExitTeleport = port;
-		Fields.Mode = Mode.spawnPort;
+		Fields.Mode = Mode.spawnPort1;
 		Fields.Ports.Add(new KeyValuePair<Teleport, Teleport>(Fields.Port, port));
 		Fields.Port = null;
 		if (Fields.CheckingConnection())
@@ -439,7 +455,7 @@ public class Field : MonoBehaviour {
 	public List<Node> GetNodesForSpawn()
 	{
 		var list = new List<Node>();
-		foreach (var node in nodes)
+		foreach (var node in Nodes)
 		{
 			if (node.Color == Color.red)
 			{
