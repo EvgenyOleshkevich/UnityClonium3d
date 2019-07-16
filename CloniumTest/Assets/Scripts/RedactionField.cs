@@ -16,7 +16,7 @@ public class RedactionField : MonoBehaviour {
 	public int RemainSpawnPlayer { get; set; }
 	public Mode Mode;
 	public Teleport Port { get; set; }
-	public List<Teleport> Ports { get; private set; }
+	public List<KeyValuePair<Teleport, Teleport>> Ports;
 	public Main Main { get; private set; }
 	
 
@@ -24,9 +24,11 @@ public class RedactionField : MonoBehaviour {
 	void Start() {
 		//data = GameObject.FindGameObjectWithTag("startGameData").GetComponent<StartGameData>();
 		Camera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CameraScr>();
-		data = new StartGameData { StepTime = 40, CountField = 2, CountPlayer = 1, SpawnPlayer = false, SpawnPort = false };
+		data = GameObject.FindGameObjectWithTag("startGameData").GetComponent<StartGameData>();
+		Destroy(GameObject.FindGameObjectWithTag("startGameData"));
+		//data = new StartGameData { StepTime = 40, CountField = 2, CountPlayer = 1, SpawnPlayer = false, SpawnPort = false };
 
-		Ports = new List<Teleport>();
+		Ports = new List<KeyValuePair<Teleport, Teleport>>();
 		Mode = Mode.none;
 		RemainSpawnPlayer = data.CountPlayer;
 
@@ -183,49 +185,37 @@ public class RedactionField : MonoBehaviour {
 
 	public void Next()
 	{
-		
-		if (Fields.Length == 1
-			&& data.SpawnPlayer)
+		if (transform.childCount > 4)
 		{
 			Destroy(transform.GetChild(4).gameObject);
 			Destroy(transform.GetChild(3).gameObject);
 			Destroy(transform.GetChild(2).gameObject);
 			Destroy(transform.GetChild(1).gameObject);
-			AutoSpawnPlayer();
+		}
+		if (data.SpawnPort)
+		{
+			Destroy(transform.GetChild(5).gameObject);
+			AutoSpawnPort();
 		}
 		else
 		{
-			if (data.SpawnPort)
+			if (Mode != Mode.spawnPort)
 			{
-				AutoSpawnPort();
+				Mode = Mode.spawnPort;
+				next.interactable = CheckingConnection();
+				return;
 			}
-			else
-			{
-				if (CheckingConnection())
-				{
-					Ports = null;
-				}
-				else
-				{
-					Destroy(transform.GetChild(4).gameObject);
-					Destroy(transform.GetChild(3).gameObject);
-					Destroy(transform.GetChild(2).gameObject);
-					Destroy(transform.GetChild(1).gameObject);
-					Mode = Mode.spawnPort;
-					next.interactable = false;
-					return;
-				}
-			}
-			if (data.SpawnPlayer)
-			{
-				AutoSpawnPlayer();
-			}
+		}
+		if (data.SpawnPlayer)
+		{
+			AutoSpawnPlayer();
 		}
 		var text = transform.GetChild(2).GetComponent<Text>();
 		Destroy(transform.GetChild(1).gameObject);
 		Mode = Mode.playing;
 		next = null;
 		Port = null;
+		Ports = null;
 		data = null;
 
 		foreach (var item in Fields)
@@ -241,9 +231,14 @@ public class RedactionField : MonoBehaviour {
 	public bool CheckingConnection()
 	{
 		var set = new HashSet<Field>();
+		set.Add(Fields[0]); // firts field is every time available(dostupno)
 		foreach (var item in Ports)
 		{
-			set.Add(item.Field);
+			if (item.Key.Field != item.Value.Field)
+			{
+				set.Add(item.Key.Field);
+				set.Add(item.Value.Field);
+			}
 		}
 		return set.Count == Fields.Length;
 	}

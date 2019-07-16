@@ -30,7 +30,8 @@ public class Main {
 		}
 		Player = Players.Dequeue();
 		Stop = false;
-		text.text = Player.Name;
+		AboutPlayers.text = Player.Name;
+		AboutPlayers.color = Player.Color;
 	}
 
 	public void UpdatePlayer()

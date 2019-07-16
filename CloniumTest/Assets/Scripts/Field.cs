@@ -274,6 +274,7 @@ public class Field : MonoBehaviour {
 
 	public void SpawnPort(Node node)
 	{
+		Fields.next.interactable = false;
 		node.SetColor(Color.blue);
 		ports = new Teleport[node.Neibors.Length];
 		for (int i = 0; i < node.Neibors.Length; i++)
@@ -344,8 +345,7 @@ public class Field : MonoBehaviour {
 		port.ExitTeleport = Fields.Port;
 		Fields.Port.ExitTeleport = port;
 		Fields.Mode = Mode.spawnPort;
-		Fields.Ports.Add(Fields.Port);
-		Fields.Ports.Add(port);
+		Fields.Ports.Add(new KeyValuePair<Teleport, Teleport>(Fields.Port, port));
 		Fields.Port = null;
 		if (Fields.CheckingConnection())
 		{

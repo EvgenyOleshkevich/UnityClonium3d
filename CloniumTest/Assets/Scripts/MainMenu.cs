@@ -6,12 +6,11 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MainMenu : MonoBehaviour {
-	public Text CountPlayers;
+	public Text CountPlayer;
 	public Text StepTime;
 	public Text CountField;
 	public Toggle AutoPlayer;
 	public Toggle AutoPort;
-	public StartGameData data;
 
 	// Use this for initialization
 	void Start ()
@@ -25,19 +24,17 @@ public class MainMenu : MonoBehaviour {
 
 	public void UpCount()
 	{
-		int count = int.Parse(CountPlayers.text.Split()[2]);
+		int count = int.Parse(CountPlayer.text.Split()[2]);
 		count = Math.Min(12, count + 1);
-		CountPlayers.text = "count players " + count.ToString();
-		data.GetComponent<StartGameData>().CountPlayer = count;
+		CountPlayer.text = "count players " + count.ToString();
 	}
 
 	public void DownCount()
 	{
 
-		int count = int.Parse(CountPlayers.text.Split()[2]);
+		int count = int.Parse(CountPlayer.text.Split()[2]);
 		count = Math.Max(2, count - 1);
-		CountPlayers.text = "count players " + count.ToString();
-		data.GetComponent<StartGameData>().CountPlayer = count;
+		CountPlayer.text = "count players " + count.ToString();
 	}
 
 	public void UpTime()
@@ -45,7 +42,6 @@ public class MainMenu : MonoBehaviour {
 		int count = int.Parse(StepTime.text.Split()[2]);
 		count = Math.Min(60, count + 10);
 		StepTime.text = "step time " + count.ToString() + " sec";
-		data.GetComponent<StartGameData>().StepTime = count;
 	}
 
 	public void DownTime()
@@ -54,7 +50,6 @@ public class MainMenu : MonoBehaviour {
 		int count = int.Parse(StepTime.text.Split()[2]);
 		count = Math.Max(20, count - 10);
 		StepTime.text = "step time " + count.ToString() + " sec";
-		data.GetComponent<StartGameData>().StepTime = count;
 	}
 
 	public void UpField()
@@ -66,7 +61,6 @@ public class MainMenu : MonoBehaviour {
 		//}
 		count = Math.Min(3, count + 1);
 		CountField.text = "count field " + count.ToString();
-		data.GetComponent<StartGameData>().CountField = count;
 	}
 
 	public void DownField()
@@ -79,15 +73,23 @@ public class MainMenu : MonoBehaviour {
 		//{
 		//	AutoPort.interactable = false;
 		//}
-		data.GetComponent<StartGameData>().CountField = count;
 	}
 
 	public void Next()
 	{
 		//Application.LoadLevel("game");
+		var data = GameObject.FindGameObjectWithTag("startGameData").GetComponent<StartGameData>();
+		data.CountPlayer = int.Parse(CountPlayer.text.Split()[2]);
+		data.StepTime = int.Parse(StepTime.text.Split()[2]);
+		data.CountField = int.Parse(CountField.text.Split()[2]);
 		data.SpawnPlayer = AutoPlayer.isOn;
 		data.SpawnPort = AutoPort.isOn;
 		SceneManager.LoadScene("redaction", LoadSceneMode.Single);
 		//Destroy(this);
+	}
+
+	public void Quit()
+	{
+		Application.Quit();
 	}
 }
